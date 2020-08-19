@@ -1,0 +1,17 @@
+{
+    "sqltools.connections": [
+        {
+            "database": "latribu",
+            "driver": "MySQL",
+            "mysqlOptions": {
+                "authProtocol": "default"
+            },
+            "name": "local",
+            "password": "1234",
+            "port": 3306,
+            "previewLimit": 50,
+            "server": "localhost",
+            "username": "root"
+        }
+    ]
+}
