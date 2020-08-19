@@ -1,7 +1,0 @@
-
-DELIMITER ;;
-CREATE TRIGGER `capitulo_B_fecha` BEFORE INSERT ON `capitulo` FOR EACH ROW
-BEGIN
-    SET NEW.fecha = NOW();
-END;;
-DELIMITER ;
