@@ -1,0 +1,193 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ manga.nombre }}{% endblock %}
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/Manga.css') }}"/>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css"
+          integrity="sha384-Bfad6CLCknfcloXFOyFnlgtENryhrpZCe29RTifKEixXQZ38WheV+i/6YWSzkz3V" crossorigin="anonymous">
+{% endblock %}
+
+{% block body %}
+    <div class="Body">
+        <div>
+            <div class="Ficha fchlt">
+                <div class="Bg" style="background-image:url('{{ asset('media/'~manga.getPortada()) }}')"></div>
+                <div class="Container">
+                    <h1 class="Title">{{ manga.nombre }}</h1>
+
+                </div>
+            </div>
+            <div class="Container">
+                <div class="BX Row BFluid Sp20">
+
+                    <aside class="SidebarA BFixed">
+                        <div class="AnimeCover">
+                            <div class="Image">
+                                <figure><img src="{{ asset('media/'~ manga.getPortada()) }}"
+                                             alt="{{ manga.getPortada() }}"
+                                             itemprop="image"></figure>
+                            </div>
+                        </div>
+                        {% if app.user %}
+                            <div id="segir" value="{{ manga.id }}">
+                                <a href="#" class="BtnNw Pndng BxSdw ">
+                                    <span>
+                                        <i class="fas fa-heart"></i>
+                                    </span>
+                                </a>
+                            </div>
+                            <div id="dejarSeguir" style=" display: none ">
+                                <a href="#" class="BtnNw Pndng BxSdw">
+                                    <span>
+                                        <i class="far fa-heart"></i>
+                                    </span>
+                                </a>
+                            </div>
+                            <input id="idfav" style=" display: none ">
+                            </input>
+                        {% endif %}
+                    </aside>
+
+
+                    <main class="Main">
+
+                        <section class="WdgtCn">
+                            <div class="Top">
+                                <div class="Title">Sinopsis</div>
+                            </div>
+
+                            <div class="Description">
+                                <p>{{ manga.descripcion }}</p>
+                            </div>
+                            <div style="clear:both"></div>
+                        </section>
+
+                        <section class="WdgtCn">
+                            <div class="Top">
+                                <div class="Title">Lista de episodios</div>
+                            </div>
+
+                            <ul class="ListCaps" id="episodeList" style="max-height: 1000px; overflow-y: auto;">
+                                {% for capitulo in manga.capitulos %}
+                                    <li value="{{ capitulo.id }}"><a
+                                                href="{{ path('capitulo_show', {'id': capitulo.id}) }}">
+                                            <h3 class="Title">{{ capitulo.nombre }} </h3>
+                                        </a><label for="{{ capitulo.id }}" class="opivw">
+                                            <input id="{{ capitulo.id }}" class="mseen" style="display: none;"
+                                                   type="checkbox"><span
+                                                    class="Stts"><span>NO</span> VISTO</span></label></li>
+                                {% endfor %}
+                            </ul>
+                        </section>
+                    </main>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+    {% if app.user %}
+        <script>
+            const idManga ={{ manga.id }};
+            const user = {{ app.user.id }};
+
+            let Capitulos = $("ul.ListCaps li");
+
+
+            /*Cambiamos los botones de estado si lo esta siguiedo*/
+            $.ajax({
+                type: "GET",
+                url: "/servicios/users/{{ app.user.id }}",
+                dataType: 'json'
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                console.log(errorThrown);
+            }).done(function (datos) {
+                    let mangasFav = datos.favoritos;
+                    //Recorremos todos los fav
+                    for (var key in mangasFav) {
+
+                        // buscamos en los fav el que tenga el id del manga
+                        if (mangasFav[key].Manga.id === idManga) {
+
+                            $("#segir").css({display: "none"});
+                            $("#dejarSeguir").css({display: "block"});
+
+                            //le asignamos el id del fav para poder borrarlo
+                            $("#idfav").attr("value", mangasFav[key].id);
+                        }
+                    }
+                }
+            );
+
+
+            /*Evento del click en seguir */
+            $("#segir").on({
+                'click': function (event) {
+                    event.preventDefault();
+                    $.ajax({
+                        type: "POST",
+                        contentType: "application/json",
+                        async: false,
+                        url: "/servicios/favoritos",
+                        data: JSON.stringify({
+                            "User": "/servicios/users/" + user,
+                            "Manga": "/servicios/mangas/" + idManga
+                        }),
+                        complete: function (data) {
+                            $("#segir").css({display :"none"});
+                            $("#dejarSeguir").css({display: "block"});
+
+                        }
+                    });
+                }
+            });
+
+
+            /*Evento del click en dejar de segir */
+            $("#dejarSeguir").on({
+                'click': function (event) {
+                    event.preventDefault();
+                    let url = "/servicios/favoritos/" + $("#idfav").val();
+                    debugger
+                    $.ajax({
+                        url: url,
+                        type: "DELETE",
+                        contentType: "application/json",
+                        async: false,
+                        complete: function (data) {
+                            $("#dejarSeguir").css({display: "none"});
+                            $("#segir").css({display: "block"});
+
+                        }
+                    });
+                }
+            });
+
+
+            $.ajax({
+                type: "GET",
+                url: "/servicios/marca_paginas?usuario={{ app.user.id }}",
+                dataType: 'json'
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                console.log(errorThrown);
+            }).done(function (datos) {
+                    for (var key in datos) {
+                        let Capis = datos[key].capitulo.id;
+                        if (Contiene(Capis, Capitulos)) {
+                            $("#" + Capis).attr("checked", "checked");
+                        }
+                    }
+                }
+            );
+
+
+        </script>
+    {% endif %}
+{% endblock %}
